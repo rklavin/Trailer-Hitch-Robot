@@ -1,2 +1,2 @@
-# EECS-4020
-Trailer Hitch Robot
+# Trailer Hitch Robot
+
