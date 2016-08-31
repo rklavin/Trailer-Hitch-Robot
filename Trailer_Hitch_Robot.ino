@@ -56,7 +56,7 @@ void loop() {
       //going forward
       ForwardMovement();
     } 
-    else if(Xbox.getAnalogHat(LeftHatY, 0) < 1000) {   //Check if Right Stick is in down direction
+    else if(Xbox.getAnalogHat(LeftHatY, 0) < 1000) {   
       //going backwards
       //buzzard
       BackwardMovement();
@@ -64,7 +64,7 @@ void loop() {
     else if(Xbox.getAnalogHat(LeftHatX, 0) > 1000) {
       //going right???
     } 
-    else if(Xbox.getAnalogHat(LeftHatX, 0) < 1000) {   //Check if Right Stick is in down direction
+    else if(Xbox.getAnalogHat(LeftHatX, 0) < 1000) {   
       //going left???
     }
     else {                                              //If Right Stick is not moved
