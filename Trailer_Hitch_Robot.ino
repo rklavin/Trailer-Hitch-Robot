@@ -119,6 +119,12 @@ void ForwardMovement() {
     //add in confirmation button
     //add in back movement is only allowed
     //Laura's function of button A needs to be called
+    if PIN_BUTTON_A = LOW {
+      ButtonA_pressed();
+    }
+    else{
+    BackwardMovement();   //only allowed
+    }
   }
 }
 
