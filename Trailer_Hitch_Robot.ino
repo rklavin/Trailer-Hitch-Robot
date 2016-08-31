@@ -1,6 +1,6 @@
 #include <XBOXRECV.h>
 
-//const int actrCtrlPin1 = 2;             //Pin to control actuator movement
+const int actrCtrlPin1 = 2;             //Pin to control actuator movement
 const int actrCtrlPin2 = 3;             //Pin to control actuator movement
 const int hallSensorPin = A0;           //Pin to read Hall Effect Sensor
 
