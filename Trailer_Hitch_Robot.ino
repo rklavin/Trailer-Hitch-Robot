@@ -7,6 +7,11 @@ const int hallSensorPin = A0;           //Pin to read Hall Effect Sensor
 const int limitTop = 100;               //Value from Hall Effect Sensor for max extension
 const int limitBot = 0;                 //Value from Hall Effect Sensor for max retraction
 
+int motorDir = 8; //Dir 1
+int motorSpeed = 9; //PWM 1
+int motorDir2 = 10; //Dir 2
+int motorSpeed2 = 11; //PWM2
+
 USB Usb;
 XBOXRECV Xbox(&Usb);
 
@@ -15,6 +20,10 @@ void setup() {
   Usb.Init(); 
   pinMode(actrCtrlPin1, OUTPUT);
   pinMode(actrCtrlPin2, OUTPUT);
+  pinMode(motorDir, OUTPUT); //Movement Part
+  pinMode(motorDir2, OUTPUT); //Movement Part
+  pinMode(motorSpeed, OUTPUT); //Movement Part
+  pinMode(motorSpeed2, OUTPUT); //Movement Part
 }
 
 void loop() {
@@ -55,3 +64,7 @@ void actuatorHold() {
   digitalWrite(actrCtrlPin1, LOW);
   digitalWrite(actrCtrlPin2, LOW);
 }
+
+
+
+//Stephanie Stuff for movement
