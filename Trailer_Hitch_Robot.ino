@@ -36,7 +36,7 @@ void loop() {
       } else {
         actuatorHold();
       }
-    } else if(Xbox.getAnalogHat(LeftHatY, 0) < 1000) {    //Check if Right Stick is in down direction
+    } else if(Xbox.getAnalogHat(RightHatY, 0) < 1000) {   //Check if Right Stick is in down direction
       if (pos > limitBot) {                               //Check if actuator can retract
         actuatorDown();
       } else {
