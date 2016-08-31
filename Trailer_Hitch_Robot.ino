@@ -8,12 +8,14 @@ const int limitTop = 100;               //Value from Hall Effect Sensor for max 
 const int limitBot = 0;                 //Value from Hall Effect Sensor for max retraction
 int sensorOK = 0;
 
+
 int motorDir = 8; //Dir 1
 int motorSpeed = 9; //PWM 1
 int motorDir2 = 10; //Dir 2
 int motorSpeed2 = 11; //PWM2
 
 int ultraSensorOK = 12;
+int buzzardBackwards = 13;               //backwards buzzard
 
 USB Usb;
 XBOXRECV Xbox(&Usb);
@@ -28,6 +30,7 @@ void setup() {
   pinMode(motorSpeed, OUTPUT); //Movement Part
   pinMode(motorSpeed2, OUTPUT); //Movement Part
   pinMode(ultraSensorOK, INPUT); //sensor okay to move?
+  pinMode(buzzardBackwards, INPUT); //beeping for backwards
 }
 
 void loop() {
@@ -56,6 +59,7 @@ void loop() {
     else if(Xbox.getAnalogHat(LeftHatY, 0) < 1000) {   //Check if Right Stick is in down direction
       //going backwards
       //buzzard
+      BackwardMovement();
     }
     else if(Xbox.getAnalogHat(LeftHatX, 0) > 1000) {
       //going right???
@@ -91,11 +95,38 @@ void actuatorHold() {
 //Stephanie Stuff for movement
 void ForwardMovement() {
 
-  if ultraSenorOK > 5 {
+  if ultraSensorOK > 5 {
     sensorOK = 1;
+    if ultraSensorOK >= 10 {
+      //continue full speed ahead!
+      
+    }
+    else if ultraSensorOk >= 8 {
+      //continue a third of the speed
+    }
+    else if ultraSensorOK >= 6 {
+      //continue 2 thirds of full speed
+    }
+    else {
+      //continue a crawl of full speed
+    }
+
   }
   else {
     sensorOK = 0;
+    analogWrite(motorSpeed, 0);
+    analogWrite(motorSpeed2, 0);
+    //add in confirmation button
+    //add in back movement is only allowed
+    //Laura's function of button A needs to be called
   }
 }
+
+void BackwardMovement() {
+    sensorOK = 1;
+    buzzardBackwards = 1; //figure out how to make it speak
+  
+    analogWrite(motorSpeed, 1); //motors same speed but slow
+    analogWrite(motorSpeed2, 1); //motors same speed but slow
+  
 }
