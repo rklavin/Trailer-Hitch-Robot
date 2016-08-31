@@ -36,13 +36,30 @@ void loop() {
       } else {
         actuatorHold();
       }
-    } else if(Xbox.getAnalogHat(RightHatY, 0) < 1000) {   //Check if Right Stick is in down direction
+    } 
+    else if(Xbox.getAnalogHat(RightHatY, 0) < 1000) {   //Check if Right Stick is in down direction
       if (pos > limitBot) {                               //Check if actuator can retract
         actuatorDown();
-      } else {
+      } 
+      else {
         actuatorHold();
       }
-    } else {                                              //If Right Stick is not moved
+    } 
+    else if(Xbox.getAnalogHat(LeftHatY, 0) > 1000) {
+      //going forward
+      
+    } 
+    else if(Xbox.getAnalogHat(LeftHatY, 0) < 1000) {   //Check if Right Stick is in down direction
+      //going backwards
+      //buzzard
+    }
+    else if(Xbox.getAnalogHat(LeftHatX, 0) > 1000) {
+      //going right???
+    } 
+    else if(Xbox.getAnalogHat(LeftHatX, 0) < 1000) {   //Check if Right Stick is in down direction
+      //going left???
+    }
+    else {                                              //If Right Stick is not moved
       actuatorHold();
     }
     delay(1);
