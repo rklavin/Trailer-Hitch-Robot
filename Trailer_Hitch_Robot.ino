@@ -6,11 +6,14 @@ const int hallSensorPin = A0;           //Pin to read Hall Effect Sensor
 
 const int limitTop = 100;               //Value from Hall Effect Sensor for max extension
 const int limitBot = 0;                 //Value from Hall Effect Sensor for max retraction
+int sensorOK = 0;
 
 int motorDir = 8; //Dir 1
 int motorSpeed = 9; //PWM 1
 int motorDir2 = 10; //Dir 2
 int motorSpeed2 = 11; //PWM2
+
+int ultraSensorOK = 12;
 
 USB Usb;
 XBOXRECV Xbox(&Usb);
@@ -24,6 +27,7 @@ void setup() {
   pinMode(motorDir2, OUTPUT); //Movement Part
   pinMode(motorSpeed, OUTPUT); //Movement Part
   pinMode(motorSpeed2, OUTPUT); //Movement Part
+  pinMode(ultraSensorOK, INPUT); //sensor okay to move?
 }
 
 void loop() {
@@ -47,7 +51,7 @@ void loop() {
     } 
     else if(Xbox.getAnalogHat(LeftHatY, 0) > 1000) {
       //going forward
-      
+      ForwardMovement();
     } 
     else if(Xbox.getAnalogHat(LeftHatY, 0) < 1000) {   //Check if Right Stick is in down direction
       //going backwards
@@ -85,3 +89,13 @@ void actuatorHold() {
 
 
 //Stephanie Stuff for movement
+void ForwardMovement() {
+
+  if ultraSenorOK > 5 {
+    sensorOK = 1;
+  }
+  else {
+    sensorOK = 0;
+  }
+}
+}
