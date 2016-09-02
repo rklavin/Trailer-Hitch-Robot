@@ -1,11 +1,13 @@
 #include <XBOXRECV.h>
 
-const int actrCtrlPin1 = 2;             //Pin to control actuator movement
-const int actrCtrlPin2 = 3;             //Pin to control actuator movement
+const int actrCtrlPin = 2;              //Pin to control actuator movement
 const int hallSensorPin = A0;           //Pin to read Hall Effect Sensor
 
 const int limitTop = 100;               //Value from Hall Effect Sensor for max extension
 const int limitBot = 0;                 //Value from Hall Effect Sensor for max retraction
+const int actrUp = 100;                 //Value used to extend actuator
+const int actrDown = 100;               //Value used to retract actuator
+const int actrHold = 0;                 //Value used to hold actuator in position
 int sensorOK = 0;
 
 
@@ -76,18 +78,15 @@ delay(1);
 }
 
 void actuatorUp() {
-  digitalWrite(actrCtrlPin1, HIGH);
-  digitalWrite(actrCtrlPin2, LOW);
+  analogWrite(actrCtrlPin, actrUp);
 }
 
 void actuatorDown() {
-  digitalWrite(actrCtrlPin1, LOW);
-  digitalWrite(actrCtrlPin2, HIGH);
+  analogWrite(actrCtrlPin, actrDown);
 }
 
 void actuatorHold() {
-  digitalWrite(actrCtrlPin1, LOW);
-  digitalWrite(actrCtrlPin2, LOW);
+  analogWrite(actrCtrlPin, actrHold);
 }
 
 
