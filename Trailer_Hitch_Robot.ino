@@ -25,8 +25,7 @@ XBOXRECV Xbox(&Usb);
 void setup() {
   Serial.begin(115200);
   Usb.Init(); 
-  pinMode(actrCtrlPin1, OUTPUT);
-  pinMode(actrCtrlPin2, OUTPUT);
+  pinMode(actrCtrlPin, OUTPUT);
   pinMode(motorDir, OUTPUT); //Movement Part
   pinMode(motorDir2, OUTPUT); //Movement Part
   pinMode(motorSpeed, OUTPUT); //Movement Part
@@ -46,7 +45,7 @@ void loop() {
         actuatorHold();
       }
     } 
-    else if(Xbox.getAnalogHat(RightHatY, 0) < 1000) {   //Check if Right Stick is in down direction
+    else if (Xbox.getAnalogHat(RightHatY, 0) < 1000) {   //Check if Right Stick is in down direction
       if (pos > limitBot) {                               //Check if actuator can retract
         actuatorDown();
       } 
@@ -54,19 +53,19 @@ void loop() {
         actuatorHold();
       }
     } 
-    else if(Xbox.getAnalogHat(LeftHatY, 0) > 1000) {
+    else if (Xbox.getAnalogHat(LeftHatY, 0) > 1000) {
       //going forward
       ForwardMovement();
     } 
-    else if(Xbox.getAnalogHat(LeftHatY, 0) < 1000) {   
+    else if (Xbox.getAnalogHat(LeftHatY, 0) < 1000) {   
       //going backwards
       //buzzard
       BackwardMovement();
     }
-    else if(Xbox.getAnalogHat(LeftHatX, 0) > 1000) {
+    else if (Xbox.getAnalogHat(LeftHatX, 0) > 1000) {
       //going right???
     } 
-    else if(Xbox.getAnalogHat(LeftHatX, 0) < 1000) {   
+    else if (Xbox.getAnalogHat(LeftHatX, 0) < 1000) {   
       //going left???
     }
     else {                                              //If Right Stick is not moved
@@ -93,23 +92,21 @@ void actuatorHold() {
 
 //Stephanie Stuff for movement
 void ForwardMovement() {
-
-  if ultraSensorOK > 5 {
+  if (ultraSensorOK > 5) {
     sensorOK = 1;
-    if ultraSensorOK >= 10 {
+    if (ultraSensorOK >= 10) {
       //continue full speed ahead!
       
     }
-    else if ultraSensorOk >= 8 {
+    else if (ultraSensorOK >= 8) {
       //continue a third of the speed
     }
-    else if ultraSensorOK >= 6 {
+    else if (ultraSensorOK >= 6) {
       //continue 2 thirds of full speed
     }
     else {
       //continue a crawl of full speed
     }
-
   }
   else {
     sensorOK = 0;
@@ -118,11 +115,11 @@ void ForwardMovement() {
     //add in confirmation button
     //add in back movement is only allowed
     //Laura's function of button A needs to be called
-    if PIN_BUTTON_A = LOW {
+    if (PIN_BUTTON_A = LOW) {
       ButtonA_pressed();
     }
-    else{
-    BackwardMovement();   //only allowed
+    else {
+      BackwardMovement();   //only allowed
     }
   }
 }
