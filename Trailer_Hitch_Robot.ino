@@ -1,3 +1,4 @@
+
 #include <XBOXRECV.h>
 #include "pitches.h"                    //need to make this header file
 
@@ -33,13 +34,14 @@ int rightLED = 24;
 int upLED = 25; 
 int downLED = 26; 
 int stopLED = 27;
+int backwardLED = 30;
 
 int melody[] = {                         //select the notes you want to play
-  NOTE_C4, NOTE_G3, NOTE_G3, NOTE_A3, NOTE_G3, 0, NOTE_B3, NOTE_C4 
+  NOTE_E2/*, NOTE_G3, NOTE_G3, NOTE_A3, NOTE_G3, 0, NOTE_B3, NOTE_C4 */
 };
 
 int noteDurations[] = {                 //4= quarter note, 8 = either note
-   4, 8, 8, 4, 4, 4, 4, 4
+   1/*, 4, 4, 4 , 4, 4, 4, 4*/
 };
 
 USB Usb;
@@ -62,6 +64,7 @@ void setup() {
   pinMode(upLED, OUTPUT);
   pinMode(downLED, OUTPUT);
   pinMode(stopLED, OUTPUT);
+  pinMode(backwardLED, OUTPUT);
   /*pinMode(PIN_BUTTON_A, INPUT);
   digitalWrite(PIN_BUTTON_A, LOW);  //question
   pinMode(PIN_BUTTON_B, INPUT);
@@ -72,54 +75,81 @@ void loop() {
   if (!emergencyStop) {
     Usb.Task();
     if (Xbox.XboxReceiverConnected) {
-      int pos = analogRead(hallSensorPin);                  //Get actuator vertical position
-      if (Xbox.getAnalogHat(RightHatY , 0) > 7500) {        //Check if Right Stick is in up direction
-        if (pos < limitTop) {                               //Check if actuator can extend
-          actuatorUp();
-        } else {
-          actuatorHold();
-        }
-      } 
-      else if (Xbox.getAnalogHat(RightHatY, 0) < -7500) {   //Check if Right Stick is in down direction
-        if (pos > limitBot) {                               //Check if actuator can retract
-          actuatorDown();
-        } 
-        else {
-          actuatorHold();
-        }
-      } 
-      else {                                              //If Right Stick is not moved
-        actuatorHold();
-      }
+      bool moving = false;
       
       if (sensorOK) {
         if (Xbox.getAnalogHat(LeftHatY, 0) > 7500) {
           //going forward
           ForwardMovement();
+          moving = true;
         } 
-        else if (Xbox.getAnalogHat(LeftHatY, 0) < -7500) {   
+        else if (Xbox.getAnalogHat(LeftHatY, 0) < -10000) {   
           //going backwards
           //buzzard
           BackwardMovement();
+          moving = true;
         }
         else if (Xbox.getAnalogHat(LeftHatX, 0) > 7500) {
           //going right???
+          digitalWrite(rightLED, HIGH);
+          moving = true;
         } 
         else if (Xbox.getAnalogHat(LeftHatX, 0) < -7500) {   
           //going left???
+          digitalWrite(leftLED, HIGH);
+          moving = true;
         }
         else {
-          
+          digitalWrite(forwardLED, LOW);
+          digitalWrite(leftLED, LOW);
+          digitalWrite(rightLED, LOW);
+          digitalWrite(backwardLED, LOW);
+          moving = false;
         }
       }
       else {
-        if (Xbox.getButtonClick(A, i)) {
+        if (Xbox.getButtonClick(A, 0)) {
           // Button is pressed
-          ButtonA_pressed();
+         ButtonA_pressed();
         }
       }
+
+      if (!moving) {
+        int pos = 10;//analogRead(hallSensorPin);                  //Get actuator vertical position
+        if (Xbox.getAnalogHat(RightHatY , 0) > 7500) {        //Check if Right Stick is in up direction
+          if (pos < limitTop) {                               //Check if actuator can extend
+            actuatorUp();
+            digitalWrite(upLED, HIGH);
+          } else {
+            actuatorHold();
+            digitalWrite(upLED, LOW);
+            digitalWrite(downLED, LOW);
+          }
+        } 
+        else if (Xbox.getAnalogHat(RightHatY, 0) < -7500) {   //Check if Right Stick is in down direction
+          if (pos > limitBot) {                               //Check if actuator can retract
+            actuatorDown();
+            digitalWrite(downLED, HIGH);
+          } 
+          else {
+            actuatorHold();
+            digitalWrite(upLED, LOW);
+            digitalWrite(downLED, LOW);
+          }
+        } 
+        else {                                              //If Right Stick is not moved
+          actuatorHold();
+          digitalWrite(upLED, LOW);
+          digitalWrite(downLED, LOW);
+        }
+      }
+      else {
+        actuatorHold();
+        digitalWrite(upLED, LOW);
+        digitalWrite(downLED, LOW);
+      }
       
-      if (Xbox.getButtonClick(B, i)) {
+     if (Xbox.getButtonClick(B, 0)) {
         // Button is pressed
         ButtonB_pressed();
       }
@@ -129,6 +159,9 @@ void loop() {
       delay(1);
     }
   delay(1);
+  }
+  else {
+    digitalWrite(stopLED, HIGH);
   }
 }
 
@@ -144,6 +177,8 @@ void actuatorDown() {
 
 void actuatorHold() {
   analogWrite(actrCtrlPin, actrHold);
+  digitalWrite(upLED, LOW);
+  digitalWrite(downLED, LOW);
 }
 
 
@@ -185,21 +220,23 @@ void ForwardMovement() {
 
 void BackwardMovement() {
   //sensorOK = 1;
-  buzzardBackwards = 1; //figure out how to make it speak
-
+ // buzzardBackwards = 1; //figure out how to make it speak
   analogWrite(motorSpeed, 1); //motors same speed but slow
   analogWrite(motorSpeed2, 1); //motors same speed but slow
-  for (int thisNote = 0; thisNote < 8; thisNote++) {
+  digitalWrite(backwardLED, HIGH);
+ // for (int thisNote = 0; thisNote < 3; thisNote++) {
     //use this to calculate noteDuration: quarter note = 1000 / 4, eighth note = 1000/8, etc.
-    int noteDuration = 1000 / noteDurations[thisNote];
-    tone(8, melody[thisNote], noteDuration);
+    int thisNote = 0;
+    int noteDuration = 10000 / noteDurations[thisNote];
+    tone(buzzardBackwards, melody[thisNote], noteDuration);
     // to distinguish the notes, set a minimum time between them.
     // the note's duration + 30% seems to work well:
-    int pauseBetweenNotes = noteDuration * 1.30;
-    delay(pauseBetweenNotes);
+    //int pauseBetweenNotes = noteDuration * 1.30;
+   // delay(pauseBetweenNotes);
     // stop the tone playing:
-    noTone(13);
-  }
+   //tone(buzzardBackwards, melody[thisNote], noteDuration);
+  noTone(13);
+ // } 
 }
 
 //Laura
