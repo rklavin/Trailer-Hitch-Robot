@@ -1,6 +1,7 @@
 
 #include <XBOXRECV.h>
 #include "pitches.h"                    //need to make this header file
+#include <servo.h>
 
 //need a pin for emergency stop button(s)
 
@@ -23,7 +24,9 @@ const int motorSpeed = 9; //PWM 1
 const int motorDir2 = 10; //Dir 2
 const int motorSpeed2 = 11; //PWM2
 
-const int ultraSensorOK = 12;
+//const int ultraSensorOK = 12;
+const int ultraSensorTX = 14;         //trig pin
+const int ultraSensorRX = 15;         //echo pin
 const int buzzardBackwards = 13;               //backwards buzzard
 
 
@@ -69,6 +72,8 @@ void setup() {
   digitalWrite(PIN_BUTTON_A, LOW);  //question
   pinMode(PIN_BUTTON_B, INPUT);
   digitalWrite(PIN_BUTTON_B, LOW);  //question*/
+  pinMode(ultraSensorRX, INPUT);
+  pinMode(ultraSensorTX, OUTPUT);
 }
 
 void loop() {
@@ -185,20 +190,32 @@ void actuatorHold() {
 
 //Stephanie Stuff for movement
 void ForwardMovement() {
-  int ultraSensor = analogRead(ultraSensorOK);
-  if (ultraSensor > 5) {
+  //int ultraSensor = analogRead(ultraSensorOK);
+  long duration, distance;
+  //getting sensor to transmit??
+  //will this give a delay?? We would need to make sure it is quick enough not to notice...
+  digitalWrite(ultraSensorTX, LOW);
+  delayMicroseconds(10);
+  digitalWrite(ultraSensorTX, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(ultraSensorTX, LOW);
+  
+  duration = pulseIn(ultraSensorRX, HIGH);
+  distance = (duration/2) / 29.1;     //distance is in cm and is what value was returned
+  
+  if (distance > 25) {               //should give about 44 inches assuming 11 inch is 25
     sensorOK = true;
-    if (ultraSensor >= 10) {
+    if (distance >= 100) {
       //continue full speed ahead!
       digitalWrite(forwardLED, HIGH);
     }
-    else if (ultraSensor >= 8) {
+    else if (distance >= 75) {
       //continue a third of the speed
     }
-    else if (ultraSensor >= 6) {
+    else if (distance >= 50) {     
       //continue 2 thirds of full speed
     }
-    else {
+    else { //25 should be about 11 inches away from it
       //continue a crawl of full speed
     }
   }
