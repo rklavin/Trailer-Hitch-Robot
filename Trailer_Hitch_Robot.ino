@@ -1,36 +1,47 @@
 
 #include <XBOXRECV.h>
-#include "pitches.h"                    //need to make this header file
-#include <servo.h>
+#include <Servo.h>
+#include "pitches.h"
 
 //need a pin for emergency stop button(s)
 
+//Actuator variables
 const int actrCtrlPin = 2;              //Pin to control actuator movement
 const int hallSensorPin = A0;           //Pin to read Hall Effect Sensor
+
+Servo actuator;
 
 const int limitTop = 100;               //Value from Hall Effect Sensor for max extension
 const int limitBot = 0;                 //Value from Hall Effect Sensor for max retraction
 const int actrUp = 100;                 //Value used to extend actuator
 const int actrDown = 100;               //Value used to retract actuator
-const int actrHold = 0;                 //Value used to hold actuator in position
-bool sensorOK = true;
-bool emergencyStop = false;
+//const int actrHold = 0;                 //Value used to hold actuator in position
+bool sensorOK = true;                   //Boolean value checked when left stick is moved
+bool emergencyStop = false;             //Boolean value, prevents all inputs while true
 
-const int PIN_BUTTON_A = 20;
-const int PIN_BUTTON_B = 21;
+//Motor variables
+const int motorSpeed1Pin = 8;           //Pin to control speed of motor 1
+const int motorSpeed2Pin = 9;           //Pin to control speed of motor 2
 
-const int motorDir = 8; //Dir 1
-const int motorSpeed = 9; //PWM 1
-const int motorDir2 = 10; //Dir 2
-const int motorSpeed2 = 11; //PWM2
+Servo motor1;                           //Servo output for motor controller 1
+Servo motor2;                           //Servo output for motor controller 2
 
-//const int ultraSensorOK = 12;
-const int ultraSensorTX = 14;         //trig pin
-const int ultraSensorRX = 15;         //echo pin
-const int buzzardBackwards = 13;               //backwards buzzard
+const int reverseMin = 90;              //Value to send to motor controller for minimum reverse speed
+const int reverseMax = 41;              //Value to send to motor controller for maximum reverse speed
+const int stationary = 92;              //Value to send to motor controller for no speed
+const int forwardMin = 94;              //Value to send to motor controller for minimum forward speed
+const int forwardMax = 143;             //Value to send to motor controller for maximum forward speed
 
+//Ultrasonic sensor variables
+const int ultraSensorTX = 14;           //Pin for trig
+const int ultraSensorRX = 15;           //Pin for echo
+const int buzzardBackwards = 13;        //Pin to send signal to buzzer
 
-//these outputs are all for testing purposes 
+//Controller variables
+const int conThresh = 7500;             //Value to check joystick position against for activation
+const int conLimit = 32768;             //Value for the limit of joystick position (needs verified)
+
+//These outputs are all for testing purposes 
 int forwardLED = 22; 
 int leftLED = 23;
 int rightLED = 24;
@@ -53,14 +64,14 @@ XBOXRECV Xbox(&Usb);
 void setup() {
   Serial.begin(115200);
   Usb.Init(); 
-  pinMode(actrCtrlPin, OUTPUT);
-  pinMode(motorDir, OUTPUT); //Movement Part
-  pinMode(motorDir2, OUTPUT); //Movement Part
-  pinMode(motorSpeed, OUTPUT); //Movement Part
-  pinMode(motorSpeed2, OUTPUT); //Movement Part
-  //pinMode(ultraSensorOK, INPUT); //sensor okay to move?
-  pinMode(buzzardBackwards, INPUT); //beeping for backwards
-//pinMode(buzzer, OUTPUT); //buzzer
+  actuator.attach(actrCtrlPin);
+  motor1.attach(motorSpeed1Pin);
+  motor2.attach(motorSpeed2Pin);
+  //pinMode(buzzardBackwards, INPUT); //beeping for backwards
+  pinMode(ultraSensorRX, INPUT);
+  pinMode(ultraSensorTX, OUTPUT);
+  
+  //Debug pins
   pinMode(forwardLED, OUTPUT);
   pinMode(leftLED, OUTPUT);
   pinMode(rightLED, OUTPUT);
@@ -68,12 +79,6 @@ void setup() {
   pinMode(downLED, OUTPUT);
   pinMode(stopLED, OUTPUT);
   pinMode(backwardLED, OUTPUT);
-  /*pinMode(PIN_BUTTON_A, INPUT);
-  digitalWrite(PIN_BUTTON_A, LOW);  //question
-  pinMode(PIN_BUTTON_B, INPUT);
-  digitalWrite(PIN_BUTTON_B, LOW);  //question*/
-  pinMode(ultraSensorRX, INPUT);
-  pinMode(ultraSensorTX, OUTPUT);
 }
 
 void loop() {
@@ -81,30 +86,30 @@ void loop() {
     Usb.Task();
     if (Xbox.XboxReceiverConnected) {
       bool moving = false;
-      
       if (sensorOK) {
-        if (Xbox.getAnalogHat(LeftHatY, 0) > 7500) {
+        if (Xbox.getAnalogHat(LeftHatY, 0) > conThresh) {
           //going forward
           ForwardMovement();
           moving = true;
         } 
-        else if (Xbox.getAnalogHat(LeftHatY, 0) < -10000) {   
+        else if (Xbox.getAnalogHat(LeftHatY, 0) < -conThresh) {   
           //going backwards
           //buzzard
           BackwardMovement();
           moving = true;
         }
-        else if (Xbox.getAnalogHat(LeftHatX, 0) > 7500) {
+        else if (Xbox.getAnalogHat(LeftHatX, 0) > conThresh) {
           //going right???
           digitalWrite(rightLED, HIGH);
           moving = true;
         } 
-        else if (Xbox.getAnalogHat(LeftHatX, 0) < -7500) {   
+        else if (Xbox.getAnalogHat(LeftHatX, 0) < -conThresh) {   
           //going left???
           digitalWrite(leftLED, HIGH);
           moving = true;
         }
         else {
+          NoMovement();
           digitalWrite(forwardLED, LOW);
           digitalWrite(leftLED, LOW);
           digitalWrite(rightLED, LOW);
@@ -120,8 +125,9 @@ void loop() {
       }
 
       if (!moving) {
-        int pos = 10;//analogRead(hallSensorPin);                  //Get actuator vertical position
-        if (Xbox.getAnalogHat(RightHatY , 0) > 7500) {        //Check if Right Stick is in up direction
+        int pos = analogRead(hallSensorPin);                  //Get actuator vertical position
+        pos = 10;
+        if (Xbox.getAnalogHat(RightHatY , 0) > conThresh) {      //Check if Right Stick is in up direction
           if (pos < limitTop) {                               //Check if actuator can extend
             actuatorUp();
             digitalWrite(upLED, HIGH);
@@ -131,7 +137,7 @@ void loop() {
             digitalWrite(downLED, LOW);
           }
         } 
-        else if (Xbox.getAnalogHat(RightHatY, 0) < -7500) {   //Check if Right Stick is in down direction
+        else if (Xbox.getAnalogHat(RightHatY, 0) < -conThresh) { //Check if Right Stick is in down direction
           if (pos > limitBot) {                               //Check if actuator can retract
             actuatorDown();
             digitalWrite(downLED, HIGH);
@@ -166,22 +172,27 @@ void loop() {
   delay(1);
   }
   else {
+    NoMovement();
     digitalWrite(stopLED, HIGH);
   }
 }
 
 void actuatorUp() {
-  analogWrite(actrCtrlPin, actrUp);
+  int stick = Xbox.getAnalogHat(RightHatY, 0);
+  int speed = map(stick, conThresh, conLimit, forwardMin, forwardMax);
+  actuator.write(speed);          //or use actrUp to specify constant value
   digitalWrite(upLED, HIGH);
 }
 
 void actuatorDown() {
-  analogWrite(actrCtrlPin, actrDown);
+  int stick = Xbox.getAnalogHat(RightHatY, 0);
+  int speed = map(stick, -conThresh, -conLimit, reverseMin, reverseMax);
+  actuator.write(speed);          //or use actrDown to specify constant value
   digitalWrite(downLED, HIGH);
 }
 
 void actuatorHold() {
-  analogWrite(actrCtrlPin, actrHold);
+  actuator.write(stationary);
   digitalWrite(upLED, LOW);
   digitalWrite(downLED, LOW);
 }
@@ -190,8 +201,9 @@ void actuatorHold() {
 
 //Stephanie Stuff for movement
 void ForwardMovement() {
-  //int ultraSensor = analogRead(ultraSensorOK);
   long duration, distance;
+  int stick = Xbox.getAnalogHat(LeftHatY, 0);
+  
   //getting sensor to transmit??
   //will this give a delay?? We would need to make sure it is quick enough not to notice...
   digitalWrite(ultraSensorTX, LOW);
@@ -203,80 +215,84 @@ void ForwardMovement() {
   duration = pulseIn(ultraSensorRX, HIGH);
   distance = (duration/2) / 29.1;     //distance is in cm and is what value was returned
   
-  if (distance > 25) {               //should give about 44 inches assuming 11 inch is 25
+  if (distance > 25) {                //should give about 44 inches assuming 11 inch is 25
     sensorOK = true;
     if (distance >= 100) {
       //continue full speed ahead!
+      int speed = map(stick, conThresh, conLimit, forwardMin, forwardMax);
+      motor1.write(speed);
+      motor2.write(speed);
       digitalWrite(forwardLED, HIGH);
     }
     else if (distance >= 75) {
-      //continue a third of the speed
+      //continue at 2 thirds of full speed
+      int max = forwardMin + (((forwardMin - forwardMax) * 2) / 3);
+      int speed = map(stick, conThresh, conLimit, forwardMin, forwardMax);
+      motor1.write(speed);
+      motor2.write(speed);
     }
     else if (distance >= 50) {     
-      //continue 2 thirds of full speed
+      //continue at a third of full speed
+      int max = forwardMin + ((forwardMin - forwardMax) / 3);
+      int speed = map(stick, conThresh, conLimit, forwardMin, forwardMax);
+      motor1.write(speed);
+      motor2.write(speed);
     }
     else { //25 should be about 11 inches away from it
       //continue a crawl of full speed
+      int max = forwardMin + ((forwardMin - forwardMax) / 6);
+      int speed = map(stick, conThresh, conLimit, forwardMin, forwardMax);
+      motor1.write(speed);
+      motor2.write(speed);
     }
   }
   else {
+    //Robot is too close, wait for confirmation to continue moving
+    //Should give user feedback, check if blink middle LEDs is possible
     sensorOK = false;
-    analogWrite(motorSpeed, 0);
-    analogWrite(motorSpeed2, 0);
-    //add in confirmation button
-    //add in back movement is only allowed
-    //Laura's function of button A needs to be called
-    /*if (PIN_BUTTON_A = LOW) {
-      ButtonA_pressed();
-    }
-    else {
-      BackwardMovement();   //only allowed
-    }*/
+    motor1.write(stationary);
+    motor2.write(stationary);
   }
 }
 
 void BackwardMovement() {
   //sensorOK = 1;
- // buzzardBackwards = 1; //figure out how to make it speak
-  analogWrite(motorSpeed, 1); //motors same speed but slow
-  analogWrite(motorSpeed2, 1); //motors same speed but slow
+  //buzzardBackwards = 1; //figure out how to make it speak
+  
+  int stick = Xbox.getAnalogHat(LeftHatY, 0);
+  int speed = map(stick, -conThresh, -conLimit, reverseMin, reverseMax);
+  motor1.write(speed);
+  motor2.write(speed);
   digitalWrite(backwardLED, HIGH);
- // for (int thisNote = 0; thisNote < 3; thisNote++) {
+  
+  //for (int thisNote = 0; thisNote < 3; thisNote++) {
     //use this to calculate noteDuration: quarter note = 1000 / 4, eighth note = 1000/8, etc.
     int thisNote = 0;
     int noteDuration = 10000 / noteDurations[thisNote];
     tone(buzzardBackwards, melody[thisNote], noteDuration);
-    // to distinguish the notes, set a minimum time between them.
-    // the note's duration + 30% seems to work well:
+    //to distinguish the notes, set a minimum time between them.
+    //the note's duration + 30% seems to work well:
     //int pauseBetweenNotes = noteDuration * 1.30;
-   // delay(pauseBetweenNotes);
-    // stop the tone playing:
-   //tone(buzzardBackwards, melody[thisNote], noteDuration);
+    //delay(pauseBetweenNotes);
+    //stop the tone playing:
+    //tone(buzzardBackwards, melody[thisNote], noteDuration);
   noTone(13);
- // } 
+  //} 
+}
+
+void NoMovement() {
+  
 }
 
 //Laura
 
 void ButtonA_pressed() {
-  //Maybe need some sort of loop to slowly move robot into position
-  
-  /*if (digitalRead(PIN_BUTTON_A) == LOW) {                        // Button A is pressed
-    //both motors move forward at same speed at certain time();
-  }
-  else {
-    //both motors move backward at same speed at certain time();
-  }*/
+  //Allow robot to be moved after proximity detection
 }
 
 void ButtonB_pressed() {
+  //Stop all current robot movement and prevent future movements
   emergencyStop = true;
   analogWrite(motorSpeed, 0);
   analogWrite(motorSpeed2, 0);
-  /*if (digitalRead(PIN_BUTTON_B) == LOW) {                     // Buttom B is pressed
-    //all motors stop ();
-  }
-  else {
-    //press BUTTON_B to start the system ();
-  }*/
 }
