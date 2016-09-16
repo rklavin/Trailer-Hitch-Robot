@@ -1,4 +1,3 @@
-
 #include <XBOXRECV.h>
 #include <Servo.h>
 #include "pitches.h"
@@ -179,15 +178,15 @@ void loop() {
 
 void actuatorUp() {
   int stick = Xbox.getAnalogHat(RightHatY, 0);
-  int speed = map(stick, conThresh, conLimit, forwardMin, forwardMax);
-  actuator.write(speed);          //or use actrUp to specify constant value
+  int movement = map(stick, conThresh, conLimit, forwardMin, forwardMax);
+  actuator.write(movement);          //or use actrUp to specify constant value
   digitalWrite(upLED, HIGH);
 }
 
 void actuatorDown() {
   int stick = Xbox.getAnalogHat(RightHatY, 0);
-  int speed = map(stick, -conThresh, -conLimit, reverseMin, reverseMax);
-  actuator.write(speed);          //or use actrDown to specify constant value
+  int movement = map(stick, -conThresh, -conLimit, reverseMin, reverseMax);
+  actuator.write(movement);          //or use actrDown to specify constant value
   digitalWrite(downLED, HIGH);
 }
 
@@ -219,31 +218,31 @@ void ForwardMovement() {
     sensorOK = true;
     if (distance >= 100) {
       //continue full speed ahead!
-      int speed = map(stick, conThresh, conLimit, forwardMin, forwardMax);
-      motor1.write(speed);
-      motor2.write(speed);
+      int movement = map(stick, conThresh, conLimit, forwardMin, forwardMax);
+      motor1.write(movement);
+      motor2.write(movement);
       digitalWrite(forwardLED, HIGH);
     }
     else if (distance >= 75) {
       //continue at 2 thirds of full speed
       int max = forwardMin + (((forwardMin - forwardMax) * 2) / 3);
-      int speed = map(stick, conThresh, conLimit, forwardMin, forwardMax);
-      motor1.write(speed);
-      motor2.write(speed);
+      int movement = map(stick, conThresh, conLimit, forwardMin, forwardMax);
+      motor1.write(movement);
+      motor2.write(movement);
     }
     else if (distance >= 50) {     
       //continue at a third of full speed
       int max = forwardMin + ((forwardMin - forwardMax) / 3);
-      int speed = map(stick, conThresh, conLimit, forwardMin, forwardMax);
-      motor1.write(speed);
-      motor2.write(speed);
+      int movement = map(stick, conThresh, conLimit, forwardMin, forwardMax);
+      motor1.write(movement);
+      motor2.write(movement);
     }
     else { //25 should be about 11 inches away from it
       //continue a crawl of full speed
       int max = forwardMin + ((forwardMin - forwardMax) / 6);
-      int speed = map(stick, conThresh, conLimit, forwardMin, forwardMax);
-      motor1.write(speed);
-      motor2.write(speed);
+      int movement = map(stick, conThresh, conLimit, forwardMin, forwardMax);
+      motor1.write(movement);
+      motor2.write(movement);
     }
   }
   else {
@@ -260,9 +259,9 @@ void BackwardMovement() {
   //buzzardBackwards = 1; //figure out how to make it speak
   
   int stick = Xbox.getAnalogHat(LeftHatY, 0);
-  int speed = map(stick, -conThresh, -conLimit, reverseMin, reverseMax);
-  motor1.write(speed);
-  motor2.write(speed);
+  int movement = map(stick, -conThresh, -conLimit, reverseMin, reverseMax);
+  motor1.write(movement);
+  motor2.write(movement);
   digitalWrite(backwardLED, HIGH);
   
   //for (int thisNote = 0; thisNote < 3; thisNote++) {
@@ -281,7 +280,8 @@ void BackwardMovement() {
 }
 
 void NoMovement() {
-  
+  motor1.write(stationary);
+  motor2.write(stationary);
 }
 
 //Laura
@@ -293,6 +293,6 @@ void ButtonA_pressed() {
 void ButtonB_pressed() {
   //Stop all current robot movement and prevent future movements
   emergencyStop = true;
-  analogWrite(motorSpeed, 0);
-  analogWrite(motorSpeed2, 0);
+  motor1.write(stationary);
+  motor2.write(stationary);
 }
