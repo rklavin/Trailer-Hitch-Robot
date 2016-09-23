@@ -8,7 +8,7 @@
 const int actrCtrlPin = 2;              //Pin to control actuator movement
 const int hallSensorPin = A0;           //Pin to read Hall Effect Sensor
 
-Servo actuator;
+Servo actuator;                         //Servo output for actuator controller
 
 const int limitTop = 100;               //Value from Hall Effect Sensor for max extension
 const int limitBot = 0;                 //Value from Hall Effect Sensor for max retraction
@@ -16,7 +16,7 @@ const int actrUp = 100;                 //Value used to extend actuator
 const int actrDown = 100;               //Value used to retract actuator
 //const int actrHold = 0;                 //Value used to hold actuator in position
 bool sensorOK = true;                   //Boolean value checked when left stick is moved
-bool emergencyStop = false;             //Boolean value, prevents all inputs while true
+bool emergencyStop = false;             //Boolean value, prevents all inputs while true, must reset arduino to continue use
 
 //Motor variables
 const int motorSpeed1Pin = 8;           //Pin to control speed of motor 1
@@ -25,11 +25,11 @@ const int motorSpeed2Pin = 9;           //Pin to control speed of motor 2
 Servo motor1;                           //Servo output for motor controller 1
 Servo motor2;                           //Servo output for motor controller 2
 
+const int reverseMax = 46;              //Value to send to motor controller for maximum reverse speed
 const int reverseMin = 90;              //Value to send to motor controller for minimum reverse speed
-const int reverseMax = 41;              //Value to send to motor controller for maximum reverse speed
 const int stationary = 92;              //Value to send to motor controller for no speed
 const int forwardMin = 94;              //Value to send to motor controller for minimum forward speed
-const int forwardMax = 143;             //Value to send to motor controller for maximum forward speed
+const int forwardMax = 141;             //Value to send to motor controller for maximum forward speed
 
 //Ultrasonic sensor variables
 const int ultraSensorTX = 14;           //Pin for trig
@@ -37,8 +37,8 @@ const int ultraSensorRX = 15;           //Pin for echo
 const int buzzardBackwards = 13;        //Pin to send signal to buzzer
 
 //Controller variables
-const int conThresh = 7500;             //Value to check joystick position against for activation
-const int conLimit = 32768;             //Value for the limit of joystick position (needs verified)
+const int conThresh = 7500;             //Value to check joystick position against for activation (minimum press to move)
+const int conLimit = 32767;             //Value for the limit of joystick position (needs verified)
 
 //These outputs are all for testing purposes 
 int forwardLED = 22; 
@@ -88,13 +88,21 @@ void loop() {
       if (sensorOK) {
         if (Xbox.getAnalogHat(LeftHatY, 0) > conThresh) {
           //going forward
-          ForwardMovement();
+          if (Xbox.getButtonClick(Y, 0)) {
+            ForwardMovement(forwardMax);
+          } else {
+            ForwardMovement(forwardMax/4);
+          }
           moving = true;
         } 
         else if (Xbox.getAnalogHat(LeftHatY, 0) < -conThresh) {   
           //going backwards
           //buzzard
-          BackwardMovement();
+          if (Xbox.getButtonClick(Y, 0)) {
+            BackwardMovement(reverseMax);
+          } else {
+            BackwardMovement(reverseMax/4);
+          }
           moving = true;
         }
         else if (Xbox.getAnalogHat(LeftHatX, 0) > conThresh) {
@@ -117,6 +125,7 @@ void loop() {
         }
       }
       else {
+        NoMovement();
         if (Xbox.getButtonClick(A, 0)) {
           // Button is pressed
          ButtonA_pressed();
@@ -199,7 +208,7 @@ void actuatorHold() {
 
 
 //Stephanie Stuff for movement
-void ForwardMovement() {
+void ForwardMovement(int maxForward) {
   long duration, distance;
   int stick = Xbox.getAnalogHat(LeftHatY, 0);
   
@@ -218,29 +227,29 @@ void ForwardMovement() {
     sensorOK = true;
     if (distance >= 100) {
       //continue full speed ahead!
-      int movement = map(stick, conThresh, conLimit, forwardMin, forwardMax);
+      int movement = map(stick, conThresh, conLimit, forwardMin, maxForward);
       motor1.write(movement);
       motor2.write(movement);
       digitalWrite(forwardLED, HIGH);
     }
     else if (distance >= 75) {
       //continue at 2 thirds of full speed
-      int max = forwardMin + (((forwardMin - forwardMax) * 2) / 3);
-      int movement = map(stick, conThresh, conLimit, forwardMin, forwardMax);
+      int max = forwardMin + (((maxForward - forwardMin)*2) / 3);
+      int movement = map(stick, conThresh, conLimit, forwardMin, maxForward);
       motor1.write(movement);
       motor2.write(movement);
     }
     else if (distance >= 50) {     
       //continue at a third of full speed
-      int max = forwardMin + ((forwardMin - forwardMax) / 3);
-      int movement = map(stick, conThresh, conLimit, forwardMin, forwardMax);
+      int max = forwardMin + ((maxForward - forwardMin) / 3);
+      int movement = map(stick, conThresh, conLimit, forwardMin, maxForward);
       motor1.write(movement);
       motor2.write(movement);
     }
     else { //25 should be about 11 inches away from it
       //continue a crawl of full speed
-      int max = forwardMin + ((forwardMin - forwardMax) / 6);
-      int movement = map(stick, conThresh, conLimit, forwardMin, forwardMax);
+      int max = forwardMin + ((maxForward - forwardMin) / 6);
+      int movement = map(stick, conThresh, conLimit, forwardMin, maxForward);
       motor1.write(movement);
       motor2.write(movement);
     }
@@ -254,12 +263,12 @@ void ForwardMovement() {
   }
 }
 
-void BackwardMovement() {
+void BackwardMovement(int maxReverse) {
   //sensorOK = 1;
   //buzzardBackwards = 1; //figure out how to make it speak
   
   int stick = Xbox.getAnalogHat(LeftHatY, 0);
-  int movement = map(stick, -conThresh, -conLimit, reverseMin, reverseMax);
+  int movement = map(stick, -conThresh, -conLimit, reverseMin, maxReverse);
   motor1.write(movement);
   motor2.write(movement);
   digitalWrite(backwardLED, HIGH);
