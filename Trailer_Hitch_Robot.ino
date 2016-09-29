@@ -91,31 +91,27 @@ void loop() {
           if (Xbox.getButtonClick(Y, 0)) {
             ForwardMovement(forwardMax);
           } else {
-            ForwardMovement(forwardMax/4);
+            ForwardMovement((forwardMin + ((forwardMax - forwardMin) / 4)), (reverseMin - ((reverseMin - reverseMax)/4)));
           }
           moving = true;
-        } 
-        else if (Xbox.getAnalogHat(LeftHatY, 0) < -conThresh) {   
+        } else if (Xbox.getAnalogHat(LeftHatY, 0) < -conThresh) {   
           //going backwards
           //buzzard
           if (Xbox.getButtonClick(Y, 0)) {
             BackwardMovement(reverseMax);
           } else {
-            BackwardMovement(reverseMax/4);
+            BackwardMovement((forwardMin + ((forwardMax - forwardMin) / 4)), (reverseMin - ((reverseMin - reverseMax)/4)));
           }
           moving = true;
-        }
-        else if (Xbox.getAnalogHat(LeftHatX, 0) > conThresh) {
+        } else if (Xbox.getAnalogHat(LeftHatX, 0) > conThresh) {
           //going right???
           digitalWrite(rightLED, HIGH);
           moving = true;
-        } 
-        else if (Xbox.getAnalogHat(LeftHatX, 0) < -conThresh) {   
+        } else if (Xbox.getAnalogHat(LeftHatX, 0) < -conThresh) {   
           //going left???
           digitalWrite(leftLED, HIGH);
           moving = true;
-        }
-        else {
+        } else {
           NoMovement();
           digitalWrite(forwardLED, LOW);
           digitalWrite(leftLED, LOW);
@@ -123,8 +119,7 @@ void loop() {
           digitalWrite(backwardLED, LOW);
           moving = false;
         }
-      }
-      else {
+      } else {
         NoMovement();
         if (Xbox.getButtonClick(A, 0)) {
           // Button is pressed
@@ -133,10 +128,10 @@ void loop() {
       }
 
       if (!moving) {
-        int pos = analogRead(hallSensorPin);                  //Get actuator vertical position
+        int pos = analogRead(hallSensorPin);                      //Get actuator vertical position
         pos = 10;
-        if (Xbox.getAnalogHat(RightHatY , 0) > conThresh) {      //Check if Right Stick is in up direction
-          if (pos < limitTop) {                               //Check if actuator can extend
+        if (Xbox.getAnalogHat(RightHatY , 0) > conThresh) {       //Check if Right Stick is in up direction
+          if (pos < limitTop) {                                   //Check if actuator can extend
             actuatorUp();
             digitalWrite(upLED, HIGH);
           } else {
@@ -144,25 +139,21 @@ void loop() {
             digitalWrite(upLED, LOW);
             digitalWrite(downLED, LOW);
           }
-        } 
-        else if (Xbox.getAnalogHat(RightHatY, 0) < -conThresh) { //Check if Right Stick is in down direction
-          if (pos > limitBot) {                               //Check if actuator can retract
+        } else if (Xbox.getAnalogHat(RightHatY, 0) < -conThresh) {  //Check if Right Stick is in down direction
+          if (pos > limitBot) {                                   //Check if actuator can retract
             actuatorDown();
             digitalWrite(downLED, HIGH);
-          } 
-          else {
+          } else {
             actuatorHold();
             digitalWrite(upLED, LOW);
             digitalWrite(downLED, LOW);
           }
-        } 
-        else {                                              //If Right Stick is not moved
+        } else {                                                    //If Right Stick is not moved
           actuatorHold();
           digitalWrite(upLED, LOW);
           digitalWrite(downLED, LOW);
         }
-      }
-      else {
+      } else {
         actuatorHold();
         digitalWrite(upLED, LOW);
         digitalWrite(downLED, LOW);
@@ -171,31 +162,29 @@ void loop() {
      if (Xbox.getButtonClick(B, 0)) {
         // Button is pressed
         ButtonB_pressed();
-      }
-      else if (false) {
+      } else if (false) {
         //change false to pin emergency stop button is on
       }
       delay(1);
     }
   delay(1);
-  }
-  else {
+  } else {
     NoMovement();
     digitalWrite(stopLED, HIGH);
   }
 }
 
 void actuatorUp() {
-  int stick = Xbox.getAnalogHat(RightHatY, 0);
-  int movement = map(stick, conThresh, conLimit, forwardMin, forwardMax);
-  actuator.write(movement);          //or use actrUp to specify constant value
+  //int stick = Xbox.getAnalogHat(RightHatY, 0);
+  //int movement = map(stick, conThresh, conLimit, forwardMin, forwardMax);
+  actuator.write(forwardMax);          //or use actrUp to specify constant value if not max forward
   digitalWrite(upLED, HIGH);
 }
 
 void actuatorDown() {
-  int stick = Xbox.getAnalogHat(RightHatY, 0);
-  int movement = map(stick, -conThresh, -conLimit, reverseMin, reverseMax);
-  actuator.write(movement);          //or use actrDown to specify constant value
+  //int stick = Xbox.getAnalogHat(RightHatY, 0);
+  //int movement = map(stick, -conThresh, -conLimit, reverseMin, reverseMax);
+  actuator.write(reverseMax);          //or use actrDown to specify constant value if not max reverse
   digitalWrite(downLED, HIGH);
 }
 
@@ -208,7 +197,7 @@ void actuatorHold() {
 
 
 //Stephanie Stuff for movement
-void ForwardMovement(int maxForward) {
+void ForwardMovement(int maxForward, int maxReverse) {
   long duration, distance;
   int stick = Xbox.getAnalogHat(LeftHatY, 0);
   
@@ -227,34 +216,37 @@ void ForwardMovement(int maxForward) {
     sensorOK = true;
     if (distance >= 100) {
       //continue full speed ahead!
-      int movement = map(stick, conThresh, conLimit, forwardMin, maxForward);
-      motor1.write(movement);
-      motor2.write(movement);
+      int movement1 = map(stick, conThresh, conLimit, reverseMin, maxReverse);
+      int movement2 = map(stick, conThresh, conLimit, forwardMin, maxForward);
+      motor1.write(movement1);
+      motor2.write(movement2);
       digitalWrite(forwardLED, HIGH);
-    }
-    else if (distance >= 75) {
+    } else if (distance >= 75) {
       //continue at 2 thirds of full speed
-      int max = forwardMin + (((maxForward - forwardMin)*2) / 3);
-      int movement = map(stick, conThresh, conLimit, forwardMin, maxForward);
-      motor1.write(movement);
-      motor2.write(movement);
-    }
-    else if (distance >= 50) {     
+      int max1 = forwardMin + (((maxForward - forwardMin)*2) / 3);
+      int max2 = reverseMin - (((reverseMin - reverseMax)*2) / 3);
+      int movement1 = map(stick, conThresh, conLimit, reverseMin, max2);
+      int movement2 = map(stick, conThresh, conLimit, forwardMin, max1);
+      motor1.write(movement1);
+      motor2.write(movement2);
+    } else if (distance >= 50) {     
       //continue at a third of full speed
-      int max = forwardMin + ((maxForward - forwardMin) / 3);
-      int movement = map(stick, conThresh, conLimit, forwardMin, maxForward);
-      motor1.write(movement);
-      motor2.write(movement);
-    }
-    else { //25 should be about 11 inches away from it
+      int max1 = forwardMin + ((maxForward - forwardMin) / 3);
+      int max2 = reverseMin - ((reverseMin - reverseMax) / 3);
+      int movement1 = map(stick, conThresh, conLimit, reverseMin, max2);
+      int movement2 = map(stick, conThresh, conLimit, forwardMin, max1);
+      motor1.write(movement1);
+      motor2.write(movement2);
+    } else { //25 should be about 11 inches away from it
       //continue a crawl of full speed
-      int max = forwardMin + ((maxForward - forwardMin) / 6);
-      int movement = map(stick, conThresh, conLimit, forwardMin, maxForward);
-      motor1.write(movement);
-      motor2.write(movement);
+      int max1 = forwardMin + ((maxForward - forwardMin) / 6);
+      int max2 = reverseMin - ((reverseMin - reverseMax) / 6);
+      int movement1 = map(stick, conThresh, conLimit, reverseMin, max2);
+      int movement2 = map(stick, conThresh, conLimit, forwardMin, max1);
+      motor1.write(movement1);
+      motor2.write(movement2);
     }
-  }
-  else {
+  } else {
     //Robot is too close, wait for confirmation to continue moving
     //Should give user feedback, check if blink middle LEDs is possible
     sensorOK = false;
@@ -263,14 +255,15 @@ void ForwardMovement(int maxForward) {
   }
 }
 
-void BackwardMovement(int maxReverse) {
+void BackwardMovement(int maxForward, int maxReverse) {
   //sensorOK = 1;
   //buzzardBackwards = 1; //figure out how to make it speak
   
   int stick = Xbox.getAnalogHat(LeftHatY, 0);
-  int movement = map(stick, -conThresh, -conLimit, reverseMin, maxReverse);
-  motor1.write(movement);
-  motor2.write(movement);
+  int movement1 = map(stick, -conThresh, -conLimit, reverseMin, maxReverse);
+  int movement2 = map(stick, -conThresh, -conLimit, forwardMin, maxForward);
+  motor1.write(movement2);
+  motor2.write(movement1);
   digitalWrite(backwardLED, HIGH);
   
   //for (int thisNote = 0; thisNote < 3; thisNote++) {
@@ -291,6 +284,7 @@ void BackwardMovement(int maxReverse) {
 void NoMovement() {
   motor1.write(stationary);
   motor2.write(stationary);
+  actuator.write(stationary);
 }
 
 //Laura
@@ -304,4 +298,5 @@ void ButtonB_pressed() {
   emergencyStop = true;
   motor1.write(stationary);
   motor2.write(stationary);
+  actuator.write(stationary);
 }
