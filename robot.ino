@@ -30,11 +30,11 @@ const int motorSpeed2Pin = 7;           //Pin to control speed of motor 2
 Servo motor1;                           //Servo output for motor controller 1
 Servo motor2;                           //Servo output for motor controller 2
 
-const int reverseMax = 46;              //Value to send to motor controller for maximum reverse speed
-const int reverseMin = 90;              //Value to send to motor controller for minimum reverse speed
+const int reverseMax = 40;              //Value to send to motor controller for maximum reverse speed
+const int reverseMin = 82;              //Value to send to motor controller for minimum reverse speed
 const int stationary = 92;              //Value to send to motor controller for no speed
-const int forwardMin = 94;              //Value to send to motor controller for minimum forward speed
-const int forwardMax = 141;             //Value to send to motor controller for maximum forward speed
+const int forwardMin = 102;              //Value to send to motor controller for minimum forward speed
+const int forwardMax = 150;             //Value to send to motor controller for maximum forward speed
 
 //Speed factor variables
 const int slowSpeed = 4;                //Value used in division of motor speed for when fast button is not pressed
