@@ -33,7 +33,7 @@ Servo motor2;                           //Servo output for motor controller 2
 const int reverseMax = 40;              //Value to send to motor controller for maximum reverse speed
 const int reverseMin = 82;              //Value to send to motor controller for minimum reverse speed
 const int stationary = 92;              //Value to send to motor controller for no speed
-const int forwardMin = 102;              //Value to send to motor controller for minimum forward speed
+const int forwardMin = 102;             //Value to send to motor controller for minimum forward speed
 const int forwardMax = 150;             //Value to send to motor controller for maximum forward speed
 
 //Speed factor variables
@@ -48,8 +48,8 @@ const int buzzardBackwards = 13;        //Pin to send signal to buzzer
 //Controller constant variables
 const int joytr = 8000;             //Value to check joystick position against for activation (minimum press to move)
 const int joym = 32000;             //Value for the limit of joystick position (needs verified)
-const float joyadd = 0.174533;      //Value for 10 degrees in radians
-const float joyatd = 0.087266;      //Value for 5 degrees in radians
+const float joyadd = 0.174533;      //Value for absolute direction threshold - 10 degrees in radians
+const float joyatd = 0.087266;      //Value for absolute turn threshold - 5 degrees in radians
 const float pi = 3.141593;          //Value of pi
 const float pi34 = 2.356194;        //Value of pi*(3/4)
 const float pi2 = 1.570796;         //Value of pi/2
@@ -60,22 +60,24 @@ const float npi2 = 0.0 - pi2;       //Value of negative pi/2
 const float npi4 = 0.0 - pi4;       //Value of negative pi/4
 
 //Controller bound variables - variables in radians arranged from 0 to 2pi, atan2 is -pi to pi
-const float joyrp = joyadd;         //Right turn positive bound
-const float joyfrn = pi4 - joyadd;  //Forward right turn negative bound
-const float joyfrp = pi4 + joyadd;  //Forward right turn postive bound
-const float joyfn = pi2 - joyadd;   //Forward negative bound
-const float joyfp = pi2 + joyadd;   //Forward positive bound
-const float joyfln = pi34 - joyadd; //Forward left negative bound
-const float joyflp = pi34 + joyadd; //Forward left positive bound
-const float joyln = pi - joyadd;    //Left turn negative bound
-const float joylp = npi + joyadd;   //Left turn positive bound
-const float joybln = npi34 - joyadd;//Backward left turn negative bound
-const float joyblp = npi34 + joyadd;//Backward left turn positive bound
-const float joybn = npi2 - joyadd;  //Backward negative bound
-const float joybp = npi2 + joyadd;  //Backward positive bound
-const float joybrn = npi4 - joyadd; //Backward right turn negative bound
-const float joybrp = npi4 + joyadd; //Backward right turn positive bound
-const float joyrn = 0.0 - joyadd;   //Right turn negative bound
+const float joyrp = joyadd;                 //Right turn positive bound
+const float joyfrn = pi4 - joyatd;          //Forward right turn negative bound
+const float joyfrp = pi4 + joyatd;          //Forward right turn postive bound
+const float joyfn = pi2 - joyadd;           //Forward negative bound
+const float joyfp = pi2 + joyadd;           //Forward positive bound
+const float joyfln = pi34 - joyatd;         //Forward left negative bound
+const float joyflp = pi34 + joyatd;         //Forward left positive bound
+const float joyln = pi - joyadd;            //Left turn negative bound
+const float joylp = npi + joyadd;           //Left turn positive bound
+const float joylpz = npi + (2.0 * joyatd);  //Backward left turn transisiton bound
+const float joybln = npi34 - joyatd;        //Backward left turn negative bound
+const float joyblp = npi34 + joyatd;        //Backward left turn positive bound
+const float joybn = npi2 - joyadd;          //Backward negative bound
+const float joybp = npi2 + joyadd;          //Backward positive bound
+const float joybrn = npi4 - joyatd;         //Backward right turn negative bound
+const float joybrp = npi4 + joyatd;         //Backward right turn positive bound
+const float joyrpz = 0.0 - (2.0 * joyatd);  //Backward right turn transistion bound
+const float joyrn = 0.0 - joyadd;           //Right turn negative bound
 
 USB Usb;
 XBOXRECV Xbox(&Usb);
@@ -125,7 +127,7 @@ void loop() {
           else if ( (joya > joyln) && (joya < joylp) ) {    //Left Turn - Turn Motor Full Reverse
             
           }
-          else if ( (joya >= joylp) && (joya <= joybln) ) { //Back Left Turn - Turn Motor Forward
+          else if ( (joya >= joylp) && (joya <= joybln) ) { //Back Left Turn - Dead Zone
             
           }
           else if ( (joya > joybln) && (joya < joyblp) ) {  //Backward Left - Turn Motor Stopped
@@ -143,7 +145,7 @@ void loop() {
           else if ( (joya > joybrn) && (joya < joybrp) ) {  //Backward Right - Turn Motor Stopped
             
           }
-          else if ( (joya >= joybrp) && (joya <= joyrn) ) { //Backward Right - Turn Motor Forward
+          else if ( (joya >= joybrp) && (joya <= joyrn) ) { //Backward Right - Dead Zone
             
           }
         }
