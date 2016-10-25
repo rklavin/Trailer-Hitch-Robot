@@ -117,7 +117,7 @@ void loop() {
     if (Xbox.XboxReceiverConnected) {
         //Emergency Stop Sensor Read
         emergencyStopVal = digitalRead(5);
-        if ( emergencyStopVal == 0 ) {
+        if (emergencyStopVal == 0) {
             emergencyStop = true;
         }
         if (!emergencyStop) {
@@ -129,19 +129,19 @@ void loop() {
             analogRead(motor2CurSensPin);
             delayMicroseconds(10);
             motor2Cur = analogRead(motor2CurSensPin);
-            if ( ( motor1Cur > maxFMotorCurRepVol ) || ( motor1Cur < maxRMotorCurRepVol ) ) {
+            if ((motor1Cur > maxFMotorCurRepVol)||(motor1Cur < maxRMotorCurRepVol)) {
               sensorOK = false;
             }
-            if ( ( motor2Cur > maxFMotorCurRepVol ) || ( motor2Cur < maxRMotorCurRepVol ) ) {
+            if ((motor2Cur > maxFMotorCurRepVol)||(motor2Cur < maxRMotorCurRepVol)) {
               sensorOK = false;
             }
             //Ultrasound Sensor Read
             Serial2.flush();
             Serial2.write(0x55);
             loopCount = 0;
-            while ( ( Serial2.available() < 2 ) && ( loopCount < 20 ) ) {
+            while ((Serial2.available() < 2)&&(loopCount < 20)) {
                 loopCount++;
-                if ( Serial1.available() >= 2 ) {
+                if (Serial1.available() >= 2) {
                     
                     loopCount = 0;
                     break;
@@ -153,148 +153,136 @@ void loop() {
                 float joyy = (float)Xbox.getAnalogHat(LeftHatY, 0);
                 float joyx = (float)Xbox.getAnalogHat(LeftHatX, 0);
                 float joyr = (float)sqrt(square(joyy) + square(joyx));
-                if ( joyr > joytr ) { //Limit joystick radius to threshold
+                if (joyr > joytr) { //Limit joystick radius to threshold
                     moving = true;
                     if (joyr > joym ) { //Limit joystick radius to maximum
                         joyr = joym;    
                     }
                     float joya = (float)atan2(joyy, joyx);
-                    if ( (joya > joyrn) || (joya <= joylp) ) {  //FORWARD QUADRANT
-                        if ( (joya > joyrn) && (joya < joyrp) ) { //Right Turn
+                    if ((joya > joyrn)||(joya <= joylp)) {  //FORWARD QUADRANT
+                        if ((joya > joyrn)&&(joya < joyrp)) { //Right Turn
                           motor1Val = (float)map(joyr, joytr, joym, forwardMin, forwardMax);
                           motor2Val = (float)map(joyr, joytr, joym, forwardMin, forwardMax);
                         }
-                        else if ( (joya >= joyrp) && (joya <= joyfn) ) {  //Forward Right Turn
+                        else if ((joya >= joyrp)&&(joya <= joyfn)) {  //Forward Right Turn
                             motor1Val = (float)map(joyr, joytr, joym, forwardMin, forwardMax);
-                            if ( (joya >= joyrp) && (joya <= joyfrn) ) { //Turn Motor Reverse
+                            if ((joya >= joyrp)&&(joya <= joyfrn)) { //Turn Motor Reverse
                               motor2ValR = (float)mapFloat(joyr, joytr, joym, 0.0, 1.0);
                               motor2ValA = (float)mapFloat(joya, joyrp, joyfrn, 1.0, 0.0);
-                              motor2ValT = (float)(motor2ValR * motor2ValA);
-                              motor2Val = (float)mapFloat(motor2ValT, 0.0, 1.0, forwardMin, forwardMax);
+                              motor2Val = (float)mapFloat((motor2ValR * motor2ValA), 0.0, 1.0, forwardMin, forwardMax);
                             }
-                            else if ( (joya > joyfrn) && (joya < joyfrp) ) {  //Turn Motor Stopped
+                            else if ((joya > joyfrn)&&(joya < joyfrp)) {  //Turn Motor Stopped
                               motor2Val = stationary;
                             }
-                            else if ( (joya >= joyfrp) && (joya <= joyfn) ) { //Turn Motor Forward
+                            else if ((joya >= joyfrp)&&(joya <= joyfn)) { //Turn Motor Forward
                               motor2ValR = (float)mapFloat(joyr, joytr, joym, 0.0, 1.0); 
                               motor2ValA = (float)mapFloat(joya, joyfrp, joyfn, 0.0, 1.0);
-                              motor2ValT = (float)(motor2ValR * motor2ValA); 
-                              motor2Val = (float)mapFloat(motor2ValT, 0.0, 1.0, reverseMin, reverseMax);
+                              motor2Val = (float)mapFloat((motor2ValR * motor2ValA), 0.0, 1.0, reverseMin, reverseMax);
                             }
                         }
-                        else if ( (joya > joyfn) && (joya < joyfp) ) {  //Forward
+                        else if ((joya > joyfn)&&(joya < joyfp)) {  //Forward
                           motor1Val = (float)map(joyr, joytr, joym, forwardMin, forwardMax);
                           motor2Val = (float)map(joyr, joytr, joym, reverseMin, reverseMax);
                         }
-                        else if ( (joya >= joyfp) && (joya <= joyln) ) {  //Forward Left Turn
+                        else if ((joya >= joyfp)&&(joya <= joyln)) {  //Forward Left Turn
                             motor2Val = (float)map(joyr, joytr, joym, reverseMin, reverseMax);
-                            if ( (joya >= joyfp) && (joya <= joyfln) ) { //Turn Motor Forward
+                            if ((joya >= joyfp)&&(joya <= joyfln)) { //Turn Motor Forward
                               motor1ValR = (float)mapFloat(joyr, joytr, joym, 0.0, 1.0);
                               motor1ValA = (float)mapFloat(joya, joyfp, joyfln, 1.0, 0.0);
-                              motor1ValT = (float)(motor1ValR * motor1ValA);
-                              motor1Val = (float)mapFloat(motor1ValT, 0.0, 1.0, forwardMin, forwardMax);
+                              motor1Val = (float)mapFloat((motor1ValR * motor1ValA), 0.0, 1.0, forwardMin, forwardMax);
                             }
-                            else if ( (joya > joyfln) && (joya < joyflp) ) {  //Turn Motor Stopped
+                            else if ((joya > joyfln)&&(joya < joyflp)) {  //Turn Motor Stopped
                               motor1Val = stationary;
                             }
-                            else if ( (joya >= joyflp) && (joya <= joyln) ) { //Turn Motor Reverse
+                            else if ((joya >= joyflp)&&(joya <= joyln)) { //Turn Motor Reverse
                               motor1ValR = (float)mapFloat(joyr, joytr, joym, 0.0, 1.0); 
                               motor1ValA = (float)mapFloat(joya, joyflp, joyln, 0.0, 1.0);
-                              motor1ValT = (float)(motor1ValR * motor1ValA); 
-                              motor1Val = (float)mapFloat(motor1ValT, 0.0, 1.0, reverseMin, reverseMax);
+                              motor1Val = (float)mapFloat((motor1ValR * motor1ValA), 0.0, 1.0, reverseMin, reverseMax);
                             }
                         }
-                        else if ( (joya > joyln) || (joya < joylp) ) {  //Left Turn
+                        else if ((joya > joyln)||(joya < joylp)) {  //Left Turn
                           motor1Val = (float)map(joyr, joytr, joym, reverseMin, reverseMax);
                           motor2Val = (float)map(joyr, joytr, joym, reverseMin, reverseMax);
                         }
                     }
-                    else if ( (joya > joylp) && (joya <= joylpz) ) {  //DEAD ZONE
+                    else if ((joya > joylp)&&(joya <= joylpz)) {  //DEAD ZONE
                         motor1Val = stationary;
                         motor2Val = stationary;
                     }
-                    else if ( (joya > joylpz) && (joya <= joyrpz) ) { //BACKWARD QUADRANT
-                        if ( (joya >= joylp) && (joya <= joybn) ) {  //Backward Left Turn
+                    else if ((joya > joylpz)&&(joya <= joyrpz)) { //BACKWARD QUADRANT
+                        if ((joya >= joylp)&&(joya <= joybn)) {  //Backward Left Turn
                             motor2Val = (float)map(joyr, joytr, joym, forwardMin, forwardMax);
-                            if ( (joya > joylpz) && (joya <= joybln) ) { //Turn Motor Forward
+                            if ((joya > joylpz)&&(joya <= joybln)) { //Turn Motor Forward
                               motor1ValR = (float)mapFloat(joyr, joytr, joym, 0.0, 1.0);
                               motor1ValA = (float)mapFloat(joya, joylpz, joybln, 1.0, 0.0);
-                              motor1ValT = (float)(motor1ValR * motor1ValA);
-                              motor1Val = (float)mapFloat(motor1ValT, 0.0, 1.0, forwardMin, forwardMax);
+                              motor1Val = (float)mapFloat((motor1ValR * motor1ValA), 0.0, 1.0, forwardMin, forwardMax);
                             }
-                            else if ( (joya > joybln) && (joya < joyblp) ) {  //Turn Motor Stopped
+                            else if ((joya > joybln)&&(joya < joyblp)) {  //Turn Motor Stopped
                               motor1Val = stationary;
                             }
-                            else if ( (joya >= joyblp) && (joya <=joybn) ) {  //Turn Motor Reverse
+                            else if ((joya >= joyblp)&&(joya <=joybn)) {  //Turn Motor Reverse
                               motor1ValR = (float)mapFloat(joyr, joytr, joym, 0.0, 1.0); 
                               motor1ValA = (float)mapFloat(joya, joyblp, joybn, 0.0, 1.0);
-                              motor1ValT = (float)(motor1ValR * motor1ValA); 
-                              motor1Val = (float)mapFloat(motor1ValT, 0.0, 1.0, reverseMin, reverseMax);
+                              motor1Val = (float)mapFloat((motor1ValR * motor1ValA), 0.0, 1.0, reverseMin, reverseMax);
                             }
                         }
-                        else if ( (joya > joybn) && (joya < joybp) ) {  //Backward
+                        else if ((joya > joybn)&&(joya < joybp)) {  //Backward
                           motor1Val = (float)map(joyr, joytr, joym, reverseMin, reverseMax);
                           motor2Val = (float)map(joyr, joytr, joym, forwardMin, forwardMax);
                         }
-                        else if ( (joya >= joybp) && (joya <= joyrn) ) {  //Backward Right Turn
+                        else if ((joya >= joybp)&&(joya <= joyrn)) {  //Backward Right Turn
                             motor1Val = (float)map(joyr, joytr, joym, reverseMin, reverseMax);
-                            if ( (joya >= joybp) && (joya <= joybrn) ) { //Turn Motor Reverse
+                            if ((joya >= joybp)&&(joya <= joybrn)) { //Turn Motor Reverse
                               motor2ValR = (float)mapFloat(joyr, joytr, joym, 0.0, 1.0);
                               motor2ValA = (float)mapFloat(joya, joybp, joybrn, 1.0, 0.0);
-                              motor2ValT = (float)(motor2ValR * motor2ValA);
-                              motor2Val = (float)mapFloat(motor2ValT, 0.0, 1.0, forwardMin, forwardMax);
+                              motor2Val = (float)mapFloat((motor2ValR * motor2ValA), 0.0, 1.0, forwardMin, forwardMax);
                             }
-                            else if ( (joya > joybrn) && (joya < joybrp) ) {  //Turn Motor Stopped
+                            else if ((joya > joybrn)&&(joya < joybrp)) {  //Turn Motor Stopped
                               motor2Val = stationary;
                             }
-                            else if ( (joya > joybrp) && (joya <= joyrpz) ) { //Turn Motor Forward
+                            else if ((joya > joybrp)&&(joya <= joyrpz)) { //Turn Motor Forward
                               motor2ValR = (float)mapFloat(joyr, joytr, joym, 0.0, 1.0); 
                               motor2ValA = (float)mapFloat(joya, joybrp, joyrpz, 0.0, 1.0);
-                              motor2ValT = (float)(motor2ValR * motor2ValA); 
-                              motor2Val = (float)mapFloat(motor2ValT, 0.0, 1.0, reverseMin, reverseMax);
+                              motor2Val = (float)mapFloat((motor2ValR * motor2ValA), 0.0, 1.0, reverseMin, reverseMax);
                             }
                         }
                     }
-                    else if ( (joya > joyrpz) && (joya <= joyrn) ) {  //DEAD ZONE
+                    else if ((joya > joyrpz)&&(joya <= joyrn)) {  //DEAD ZONE
                         motor1Val = stationary;
                         motor2Val = stationary;
                     }
                 }
-                else {  //No Left Joystick Movement
+                else {  //No Left Joystick Movement = not moving
                     moving = false;
                     motor1Val = stationary;
                     motor2Val = stationary;
-                    if ( Xbox.getAnalogHat(RightHatY, 0) > joytr ) {
+                    if (Xbox.getAnalogHat(RightHatY, 0) > joytr) {
                       actrVal = forwardMax;
                     }
-                    else if ( Xbox.getAnalogHat(RightHatY, 0) < -joytr ) {
+                    else if (Xbox.getAnalogHat(RightHatY, 0) < -joytr) {
                       actrVal = reverseMax;
                     }
                     else {
                       actrVal = stationary;
                     }
                 }
-                /*if ( !Xbox.getButtonPress(Y, 0) ) {
-                    if ( motor1Val > forwardMin ) {
-                        motor1Val = mapFloat(motor1Val, forwardMin, forwardMax, forwardMin, ( forwardMax / slowSpeed ));
+                if (!Xbox.getButtonPress(Y, 0)) {
+                    if (motor1Val >= forwardMin) {
+                        motor1Val = mapFloat(motor1Val, forwardMin, forwardMax, forwardMin, (forwardMax / slowSpeed));
                     }
-                    else if ( motor1Val < reverseMin ) {
-                        motor1Val = mapFloat(motor1Val, reverseMin, reverseMax, reverseMin, ( reverseMax / slowSpeed ));
+                    else if (motor1Val =< reverseMin) {
+                        motor1Val = mapFloat(motor1Val, reverseMin, reverseMax, reverseMin, (reverseMax / slowSpeed));
                     }
-                    if ( motor2Val > forwardMin ) {
-                        motor2Val = mapFloat(motor2Val, forwardMin, forwardMax, forwardMin, ( forwardMax / slowSpeed ));
+                    if (motor2Val >= forwardMin) {
+                        motor2Val = mapFloat(motor2Val, forwardMin, forwardMax, forwardMin, (forwardMax / slowSpeed));
                     }
-                    else if ( motor2Val < reverseMin ) {
-                        motor2Val = mapFloat(motor2Val, reverseMin, reverseMax, reverseMin, ( reverseMax / slowSpeed ));
+                    else if (motor2Val =< reverseMin) {
+                        motor2Val = mapFloat(motor2Val, reverseMin, reverseMax, reverseMin, (reverseMax / slowSpeed));
                     }
-                }*/
+                }
                 motor1.write(motor1Val);
                 motor2.write(motor2Val);
                 actuator.write(actrVal);
-                
-               /* Serial.print(motor1Val);
-                Serial.print(",");
-                Serial.println(motor2Val);*/
             } 
             if ((Xbox.getButtonPress(B, 0))) { //Emergency stop protocol
                 emergencyStop = true;
