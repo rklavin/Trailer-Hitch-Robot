@@ -257,7 +257,7 @@ void loop() {
                     moving = false;
                     motor1Val = stationary;
                     motor2Val = stationary;
-                    if (Xbox.getAnalogHat(RightHatY, 0) > joytr) {
+                    if (Xbox.getAnalogHat(RightHatY, 0) > joytr) { //Controll actuator based on the right stick
                       actrVal = forwardMax;
                     }
                     else if (Xbox.getAnalogHat(RightHatY, 0) < -joytr) {
@@ -267,21 +267,21 @@ void loop() {
                       actrVal = stationary;
                     }
                 }
-                if (!Xbox.getButtonPress(Y, 0)) {
+                if (!Xbox.getButtonPress(Y, 0)) { //Slow down the motor speed if Y is not held
                     if (motor1Val >= forwardMin) {
-                        motor1Val = mapFloat(motor1Val, forwardMin, forwardMax, forwardMin, (forwardMax / slowSpeed));
+                        motor1Val = ((motor1Val - forwardMin) / slowSpeed) + forwardMin;
                     }
                     else if (motor1Val =< reverseMin) {
-                        motor1Val = mapFloat(motor1Val, reverseMin, reverseMax, reverseMin, (reverseMax / slowSpeed));
+                        motor1Val = reverseMin - ((reverseMin - motor1Val) / slowSpeed);
                     }
                     if (motor2Val >= forwardMin) {
-                        motor2Val = mapFloat(motor2Val, forwardMin, forwardMax, forwardMin, (forwardMax / slowSpeed));
+                        motor2Val = ((motor2Val - forwardMin) / slowSpeed) + forwardMin;
                     }
                     else if (motor2Val =< reverseMin) {
-                        motor2Val = mapFloat(motor2Val, reverseMin, reverseMax, reverseMin, (reverseMax / slowSpeed));
+                        motor2Val = reverseMin - ((reverseMin - motor2Val) / slowSpeed);
                     }
                 }
-                motor1.write(motor1Val);
+                motor1.write(motor1Val);    //Write motor and actuator values
                 motor2.write(motor2Val);
                 actuator.write(actrVal);
             } 
@@ -292,15 +292,15 @@ void loop() {
                 actuator.write(stationary);
             }
         }
-        else {  //If an emergency stop button has been pressed
-            if (Xbox.getButtonPress(A, 0)&&(Xbox.getButtonPress(B, 0)) {
-                delay(restartDelay);  //Combination of A+B must be pressed to release emegency stop
+        else {  //If an emergency stop has been issued
+            if (Xbox.getButtonPress(A, 0)&&(Xbox.getButtonPress(B, 0)) { //Press A+B to reset emergency stop
+                delay(restartDelay); 
                 emergencyStop = false;
             }
         }
     }
 }
 
-float mapFloat(float x, float in_min, float in_max, float out_min, float out_max) {
+float mapFloat(float x, float in_min, float in_max, float out_min, float out_max) { //Map function for float numbers
   return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
