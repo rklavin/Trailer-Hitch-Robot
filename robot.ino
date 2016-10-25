@@ -1,12 +1,13 @@
 #include <XBOXRECV.h>
 #include <Servo.h>
 #include <Math.h>
+#include <Wire.h>
 
 //Sytem variables
+const int restartDelay = 2500;          //Value in miliseconds, used when reset combination is pressed during emergency stop
 bool sensorOK = true;                   //Boolean value checked when left stick is moved
 bool emergencyStop = false;             //Boolean value, prevents all inputs while true, must reset arduino to continue use
 bool moving = false;
-const int restartDelay = 5000;          //Value in miliseconds, used when reset combination is pressed during emergency stop
 
 //Motor variables
 const float slowSpeed = 2.0;       //Value used in division of motor speed for when fast button is not pressed
@@ -48,7 +49,6 @@ int loopCount = 0;
 //Actuator variables
 const int actrCtrlPin = 8;              //Pin to control actuator movement
 float actrVal;
-const int hallSensorPin = A0;           //Pin to read Hall Effect Sensor
 
 //Motor controller variables
 const float reverseMax = 40.0;              //Value to send to motor controller for maximum reverse speed
@@ -97,14 +97,14 @@ Servo motor2;
 Servo actuator;
 
 void setup() {
-    maxFMotorCurRepVol = mapFloat(maxMotorCur, 0, maxSensCur, curSenZeroVol, curSenMaxFVol);
-    maxRMotorCurRepVol = mapFloat(maxMotorCur, 0, maxSensCur, curSenZeroVol, curSenMaxRVol);
     motor1.attach(motor1Pin);
     motor2.attach(motor2Pin);
     actuator.attach(actrCtrlPin);
     motor1.write(stationary);
     motor2.write(stationary);
     actuator.write(stationary);
+    maxFMotorCurRepVol = mapFloat(maxMotorCur, 0, maxSensCur, curSenZeroVol, curSenMaxFVol);
+    maxRMotorCurRepVol = mapFloat(maxMotorCur, 0, maxSensCur, curSenZeroVol, curSenMaxRVol);
     Serial.begin(115200);
     Serial1.begin(115200);
     Serial2.begin(9600);
