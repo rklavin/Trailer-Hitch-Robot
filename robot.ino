@@ -5,7 +5,8 @@
 
 //Sytem variables
 const int restartDelay = 2500;          //Value in miliseconds, used when reset combination is pressed during emergency stop
-bool sensorOK = true;                   //Boolean value checked when left stick is moved
+bool curOK = true;
+bool ultraOK = true;
 bool emergencyStop = false;             //Boolean value, prevents all inputs while true, must reset arduino to continue use
 bool moving = false;
 
@@ -60,8 +61,8 @@ const float forwardMax = 150.0;             //Value to send to motor controller 
 //Controller constant variables
 const float joytr = 8000.0;         //Value to check joystick position against for activation (minimum press to move)
 const float joym = 33000.0;         //Value for the limit of joystick position (needs verified)
-const float joyadd = 0.087266;      //Value for absolute direction threshold - 2.5 degrees in radians
-const float joyatd = 0.087266;      //Value for absolute turn threshold - 2.5 degrees in radians
+const float joyadd = 0.087266;      //Value for absolute direction threshold - 5 degrees in radians
+const float joyatd = 0.087266;      //Value for absolute turn threshold - 5 degrees in radians
 const float pi = 3.141593;          //Value of pi
 const float pi34 = 2.356194;        //Value of pi*(3/4)
 const float pi2 = 1.570796;         //Value of pi/2
@@ -284,7 +285,7 @@ void loop() {
                 motor2.write(motor2Val);
                 actuator.write(actrVal);
             } 
-            if ((Xbox.getButtonPress(B, 0))) { //Emergency stop protocol
+            if (Xbox.getButtonPress(B, 0)) { //Emergency stop protocol
                 emergencyStop = true;
                 motor1.write(stationary);
                 motor2.write(stationary);
@@ -292,7 +293,7 @@ void loop() {
             }
         }
         else {  //If an emergency stop button has been pressed
-            if ((Xbox.getButtonPress(A, 0)) && (Xbox.getButtonPress(B, 0))) {
+            if (Xbox.getButtonPress(A, 0)&&(Xbox.getButtonPress(B, 0)) {
                 delay(restartDelay);  //Combination of A+B must be pressed to release emegency stop
                 emergencyStop = false;
             }
