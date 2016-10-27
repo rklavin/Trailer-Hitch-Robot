@@ -34,9 +34,11 @@ const float curSenMaxFVol = 4.5;
 const float curSenZeroVol = 2.5;
 const float curSenMaxRVol = 0.5;
 const float maxSensCur = 100.0;
-const float maxMotorCur = 60.0;
-float maxFMotorCurRepVol;
-float maxRMotorCurRepVol;
+const float maxMotorCurWarn = 50.0;
+const float maxMotorCurFault = 80.0;
+bool currentOK = false;
+float maxFMotorCurRepWarn;
+float maxRMotorCurRepWarn;
 float motor1Cur;
 float motor2Cur;
 
@@ -45,7 +47,16 @@ unsigned int HighLen1 = 0;
 unsigned int HighLen2 = 0;
 unsigned int LowLen1 = 0;
 unsigned int LowLen2 = 0;
+bool serial2Write = false;
+bool serial3Write = false;
+bool ultrasoundOK = false;
 int loopCount = 0;
+unsigned int msbSerial2;
+unsigned int lsbSerial2;
+unsigned int serial2Dist;
+unsigned int msbSerial3;
+unsigned int lsbSerial3;
+unsigned int serial3Dist;
 
 //Actuator variables
 const int actrCtrlPin = 8;              //Pin to control actuator movement
@@ -104,8 +115,10 @@ void setup() {
     motor1.write(stationary);
     motor2.write(stationary);
     actuator.write(stationary);
-    maxFMotorCurRepVol = mapFloat(maxMotorCur, 0, maxSensCur, curSenZeroVol, curSenMaxFVol);
-    maxRMotorCurRepVol = mapFloat(maxMotorCur, 0, maxSensCur, curSenZeroVol, curSenMaxRVol);
+    maxFMotorCurRepWarn = mapFloat(maxMotorCur, 0, maxSensCurWarn, curSenZeroVol, curSenMaxFVol);
+    maxRMotorCurRepWarn = mapFloat(maxMotorCur, 0, maxSensCurWarn, curSenZeroVol, curSenMaxRVol);
+    maxFMotorCurRepFault = mapFloat(maxMotorCur, 0, maxSensCurFault, curSenZeroVol, curSenMaxFVol);
+    maxRMotorCurRepFault = mapFloat(maxMotorCur, 0, maxSensCurFault, curSenZeroVol, curSenMaxRVol);
     Serial.begin(115200);
     Serial1.begin(115200);
     Serial2.begin(9600);
@@ -116,41 +129,72 @@ void setup() {
 void loop() {
     Usb.Task();
     if (Xbox.XboxReceiverConnected) {
+
         //Emergency Stop Sensor Read
-        emergencyStopVal = digitalRead(5);
+        emergencyStopVal = digitalRead(5);  
         if (emergencyStopVal == 0) {
             emergencyStop = true;
         }
+        //Current Sensor Read
+        analogRead(motor1CurSensPin);
+        delayMicroseconds(10);
+        motor1Cur = analogRead(motor1CurSensPin);
+        analogRead(motor2CurSensPin);
+        delayMicroseconds(10);
+        motor2Cur = analogRead(motor2CurSensPin);
+        if ((motor1Cur >= maxFMotorCurRepWarn)&&(motor1Cur < maxFMotorCurRepFault)) {
+          currentWarn;
+        }
+        else if ((motor1Cur <= maxRMotorCurRepWarn)&&(motor1Cur > maxRMotorCurRepFault)) {
+          currentWarn;
+        }
+        else if ((motor1Cur >= maxFMotorCurRepFault)||(motor1Cur <= maxRMotorCurRepFault) {
+          emergencyStop = true;
+        }
+        if ((motor2Cur >= maxFMotorCurRepWarn)&&(motor2Cur < maxFMotorCurRepFault)) {
+          currentWarn;
+        }
+        else if ((motor2Cur <= maxRMotorCurRepWarn)&&(motor2Cur > maxRMotorCurRepFault)) {
+          currentWarn;
+        }
+        else if ((motor2Cur >= maxFMotorCurRepFault)||(motor2Cur <= maxRMotorCurRepFault) {
+          emergencyStop = true;
+        }
+        //Ultrasound Sensor Read
+        if (serial2Write) { //Check current ultrasound process for Serial2
+          if (Serial2.available() >= 2) { //Read returned ultrasound data
+            msbSerial2 = Serial2.read();
+            lsbSerial2 = Serial2.read();
+            serial2Dist = msbSerial2 * 256 + lsbSerial2;
+          }
+          serial2Write = false;
+        }
+        else {  //Write ultrasound trigger command
+          Serial2.flush();
+          Serial2.write(0x55);
+          serial3Write = true;
+        }
+        if (serial3Write) { //Check current ultrasound process for Serial3
+          if (Serial2.available() >= 2) { //Read returned ultrasound data
+            msbSerial3 = Serial3.read();
+            lsbSerial3 = Serial3.read();
+            serial3Dist = msbSerial3 * 256 + lsbSerial3;
+          }
+          serial3Write = false;
+        }
+        else {  //Write ultrasound trigger command
+          Serial3.flush();
+          Serial3.write(0x55);
+          serial3Write = true;
+        }
+          
+        
         if (!emergencyStop) {
             
-            //Current Sensor Read
-            analogRead(motor1CurSensPin);
-            delayMicroseconds(10);
-            motor1Cur = analogRead(motor1CurSensPin);
-            analogRead(motor2CurSensPin);
-            delayMicroseconds(10);
-            motor2Cur = analogRead(motor2CurSensPin);
-            if ((motor1Cur > maxFMotorCurRepVol)||(motor1Cur < maxRMotorCurRepVol)) {
-              sensorOK = false;
-            }
-            if ((motor2Cur > maxFMotorCurRepVol)||(motor2Cur < maxRMotorCurRepVol)) {
-              sensorOK = false;
-            }
-            //Ultrasound Sensor Read
-            Serial2.flush();
-            Serial2.write(0x55);
-            loopCount = 0;
-            while ((Serial2.available() < 2)&&(loopCount < 20)) {
-                loopCount++;
-                if (Serial1.available() >= 2) {
-                    
-                    loopCount = 0;
-                    break;
-                }
-            }
-
-          
-            if (sensorOK) {
+           
+            
+            
+            if (ultrasoundOK) {
                 float joyy = (float)Xbox.getAnalogHat(LeftHatY, 0);
                 float joyx = (float)Xbox.getAnalogHat(LeftHatX, 0);
                 float joyr = (float)sqrt(square(joyy) + square(joyx));
@@ -299,6 +343,10 @@ void loop() {
             }
         }
     }
+}
+
+void warnCurrent() {  //Warn about high current
+  
 }
 
 float mapFloat(float x, float in_min, float in_max, float out_min, float out_max) { //Map function for float numbers
